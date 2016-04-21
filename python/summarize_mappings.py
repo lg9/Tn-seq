@@ -30,6 +30,7 @@ def init_options():
                           add_help_option=True)
     parser.add_option("-i", "--infile", action="store", type="string", dest="infile", help="path to input sam file")
     parser.add_option("-o", "--outfile", action="store", type="string", dest="outfile", help="path to output counts file (default <infile>" + OUT_SUFFIX + ")")
+    parser.add_option("-k", "--backendseq", action="store_true", default=False, dest="backendseq", help="indicate that sequencing was from 'back end' of the transposon")
 
     opts, args = parser.parse_args()
     if (opts.infile is None):
@@ -44,7 +45,7 @@ def init_options():
     return opts, args
 
 # Parse .sam file and count mapped reads per position
-def count_reads(infile):
+def count_reads(infile, backendseq=False):
     with open(infile, "r") as fh:
         count = 0
         readlength = 0
@@ -55,12 +56,20 @@ def count_reads(infile):
                 continue
             (qname, flag, rname, pos, mapq, cigar, mrnm, mpos, isize, seq, qual) = line.rstrip().split("\t", 10)
             # Sequencing of Tn is usually 5' to 3', so a + mapping is considered Reverse
+            ''' if sequencing is from 'back end' of transposon, use lower case direction symbols so that
+            subsequent annotation script can recognize them and adjust directions appropriately. '''
             if flag == "4":
                 continue
             if flag == "16":
-                strand = "F"
+                if backendseq:
+                    strand = "f"
+                else:
+                    strand = "F"
             else:
-                strand = "R"
+                if backendseq:
+                    strand = "r"
+                else:
+                    strand = "R"
             replicon = rname
             if not readlength:
                 readlength = len(seq)
@@ -70,8 +79,12 @@ def count_reads(infile):
             if SWAP_DIR:
                 if strand == "F":
                     strand = "R"
-                else:
+                elif strand == "R":
                     strand = "F"
+                elif strand == "f":
+                    strand = "r"
+                else:
+                    strand = "f"
             poscounts[(replicon, pos, strand)] = poscounts.get((replicon, pos, strand), 0) + 1
             if int(mapq) == 0:
                 zerocounts[(replicon, pos, strand)] = zerocounts.get((replicon, pos, strand), 0) + 1
@@ -109,7 +122,7 @@ def main():
     opts, args = init_options()
 
     print "Summarizing mappings"
-    (poscounts, zerocounts) = count_reads(opts.infile)
+    (poscounts, zerocounts) = count_reads(opts.infile, opts.backendseq)
     print_counts(opts.outfile, poscounts, zerocounts)
 
     if len(poscounts) == 0:

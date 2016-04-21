@@ -37,6 +37,7 @@ def init_options():
     parser.add_option("-c", "--chastity", action="store_true", default=False, dest="dochastity", help="run chastity filter (default: False)")
     parser.add_option("-n", "--normfactor", action="store", type="int", default=common.NORM_FACTOR, dest="norm_factor", help="read count normalization factor (default: " + str(common.NORM_FACTOR) + ") (0 = don't normalize)")
     parser.add_option("-s", "--merge_slipped", action="store_true", default=False, dest="merge_slipped", help="merge slipped reads (default: False)")
+    parser.add_option("-k", "--backendseq", action="store_true", default=BACK_END_SEQ, dest="backendseq", help="indicate that sequencing was from the 'back end' of transposon")
     parser.add_option("-u", "--use_bowtie", action="store_true", default=False, dest="use_bowtie", help="map reads using Bowtie (default: use BWA)")
     parser.add_option("-w", "--workingdir", action="store", default=common.WORKING_DIR, dest="workdir", help="working directory for input and output files (default: " + common.WORKING_DIR + ")")
 
@@ -271,7 +272,10 @@ def process(infiles, opts):
     for sam_file in sam_files:
         parts = os.path.splitext(sam_file)
         outfile = parts[0] + common.SUM_EXTENSION
-        common.run_cmd(["python", os.path.join(scriptpath, "summarize_mappings.py"), "--infile", sam_file, "--outfile", outfile])
+        run_cmd_list = ["python", os.path.join(scriptpath, "summarize_mappings.py"), "--infile", sam_file, "--outfile", outfile]
+        if opts.backendseq:
+            run_cmd_list += ["--backendseq"]
+        common.run_cmd(run_cmd_list)
         sum_files.append(outfile)
 
     # Merge slipped reads

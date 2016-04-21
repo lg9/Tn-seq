@@ -29,6 +29,7 @@ TRIM_SUFFIX = "_trim"
 MERGE_SUFFIX = "_mg"
 NORM_SUFFIX = "_norm"
 NORM_FACTOR = 10000000
+BACK_END_SEQ = False
 WORKING_DIR = "work"
 SCRIPTS_PATH = "."
 
