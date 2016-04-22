@@ -59,6 +59,12 @@ def merge_files(reads_file, anno_file, outfile1, outfile2, repl_names):
             (replicon, position, direction, reads_columns) = line_reads.rstrip('\n').split('\t', 3)
             (repl_anno, pos_anno, dir_anno, eff_pos, pid, locus, from_pos, to_pos, strand, gene, code, cog, product, rel_pos, notes) = line_anno.rstrip('\n').split('\t')
 
+            # Switch direction for back-end reads (indicated by lower case)
+            if direction == 'f':
+                direction = 'R'
+            if direction == 'r':
+                direction = 'F'
+            
             # Make sure the input files match at this line
             if replicon != repl_anno or position != pos_anno or direction != dir_anno:
                 mismatches += 1

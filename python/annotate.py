@@ -47,12 +47,18 @@ def init_options():
 
 def annotate(replicon, position, direction, annotations):
     # Positions immediately right and left of the Tn
-    if direction == 'F':
+    if direction == 'F' or direction == 'f':
         lpos = position
         rpos = position - 8
     else:
         lpos = position + 8
         rpos = position
+
+    # if directions are lower case, sequencing was from back-end of Tn; therefore, switch direction label to indicate true Tn insertion direction
+    if direction == 'f':
+        direction = 'R'
+    if direction == 'r':
+        direction = 'F'
 
     effectivepos = "";
     locus_tag = "";
