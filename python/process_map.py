@@ -37,7 +37,7 @@ def init_options():
     parser.add_option("-c", "--chastity", action="store_true", default=False, dest="dochastity", help="run chastity filter (default: False)")
     parser.add_option("-n", "--normfactor", action="store", type="int", default=common.NORM_FACTOR, dest="norm_factor", help="read count normalization factor (default: " + str(common.NORM_FACTOR) + ") (0 = don't normalize)")
     parser.add_option("-s", "--merge_slipped", action="store_true", default=False, dest="merge_slipped", help="merge slipped reads (default: False)")
-    parser.add_option("-k", "--backendseq", action="store_true", default=BACK_END_SEQ, dest="backendseq", help="indicate that sequencing was from the 'back end' of transposon")
+    parser.add_option("-k", "--backendseq", action="store_true", default=common.BACK_END_SEQ, dest="backendseq", help="indicate that sequencing was from the 'back end' of transposon")
     parser.add_option("-u", "--use_bowtie", action="store_true", default=False, dest="use_bowtie", help="map reads using Bowtie (default: use BWA)")
     parser.add_option("-w", "--workingdir", action="store", default=common.WORKING_DIR, dest="workdir", help="working directory for input and output files (default: " + common.WORKING_DIR + ")")
 
