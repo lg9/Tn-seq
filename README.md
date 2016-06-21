@@ -29,6 +29,7 @@ Options:
   -e, --demux_read2         use 2nd end read to demultiplex (default: False)
   -b, --barcodefile         path to file listing expected barcode sequences
   -c, --chastity            run chastity filter (default: False)
+  -k, --backendseq			indicate that sequencing was from 'back end' of transposon
   -n, --normfactor          read count normalization factor (default: 10,000,000)
                             (0 = don't normalize)
   -s, --merge_slipped       merge slipped reads (default: False)
