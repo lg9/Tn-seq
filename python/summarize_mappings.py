@@ -71,8 +71,7 @@ def count_reads(infile, backendseq=False):
                 else:
                     strand = "R"
             replicon = rname
-            if not readlength:
-                readlength = len(seq)
+            readlength = len(seq)
             # Adjust to the Tn start position for F reads
             if strand == "F" or strand == "f":
                 pos = str(int(pos) + (readlength - 1))
