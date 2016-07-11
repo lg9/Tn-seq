@@ -20,7 +20,40 @@ SHOW_TOTALS = False
 #------------------------------------------------------------------------------
 # functions
 #------------------------------------------------------------------------------
-def read_files(infiles):
+def init_options():
+    usage = "usage: %prog [options] <input file(s)>"
+    parser = optparse.OptionParser(prog=sys.argv[0],
+                                   usage=usage,
+                                   add_help_option=True)
+    parser.add_option("-l", "--locations_screen", action="store", type="string", dest="ok_locs_file", default=None,
+                      help="file (with header) listing insertion locations (replicon, position, direction) to " +
+                      "include in compiled list (and ignore all other locations); without this option, " +
+                      "all locations are counted")
+    parser.add_option("-o", "--output_file", action="store", type="string", dest="outfile", required=True,
+                      help="output file")
+    opts, args = parser.parse_args()
+
+    if len(args)==0:
+        parser.print_help()
+        exit(1)
+
+    return opts, args
+
+def get_ok_locs(ok_locs_file):
+    ok_locs = list()
+    with open(ok_locs_file, "r") as fh:
+        try:
+            header = fh.readline()
+            for line in fh:
+                (replicon, pos, strand) = line.rstrip().split("\t")[:3]
+                ok_locs.append((replicon, pos, strand))
+        except StopIteration:
+            break
+    return ok_locs
+
+def read_files(infiles, ok_locs_file=None):
+    if ok_locs_file:
+        ok_locations = get_ok_locs(ok_locs_file)
     totals = dict()
     filereads = dict()
     for infile in infiles:
@@ -30,6 +63,10 @@ def read_files(infiles):
                 header = fh.readline()
                 for line in fh:
                     (replicon, pos, strand, readcount) = line.rstrip().split("\t")
+                    if ok_locs_file:
+                        if (replicon, pos, strand) not in ok_locations:
+                            # skip the location if it's not a one designated to be counted
+                            continue
                     totals[(replicon, pos, strand)] = totals.get((replicon, pos, strand), 0) + float(readcount)
                     filereads[(infile, replicon, pos, strand)] = readcount
             except StopIteration:
@@ -61,16 +98,13 @@ def write_compiled(totals, filereads, infiles, outfile):
 #-----------------------------------------------------
 def main():
     # Get command line options
-    if len(sys.argv) < 3:
-        print "Usage: " + sys.argv[0] + " <input file(s)> <output file>"
-        exit(1)
-    infiles = sys.argv[1:-1]
-    outfile = sys.argv[-1]
+    opts, args = init_options()
+    infiles = args
 
     print "Compiling sets of read counts"
-    (totals, filereads) = read_files(infiles)
+    (totals, filereads) = read_files(infiles, args.ok_locs_file)
 
-    write_compiled(totals, filereads, infiles, outfile)
+    write_compiled(totals, filereads, infiles, opts.outfile)
 
 if __name__ == "__main__":
     main()
