@@ -25,11 +25,10 @@ def init_options():
     parser = optparse.OptionParser(prog=sys.argv[0],
                                    usage=usage,
                                    add_help_option=True)
-    parser.add_option("-l", "--locations_screen", action="store", type="string", dest="ok_locs_file", default=None,
-                      help="file (with header) listing insertion locations (replicon, position, direction) to " +
-                      "include in compiled list (and ignore all other locations); without this option, " +
-                      "all locations are counted")
-    parser.add_option("-o", "--output_file", action="store", type="string", dest="outfile", required=True,
+    parser.add_option("-l", "--ok_locs_file", action="store", type="string", dest="ok_locs_file", default=None,
+                      help="file (with header) listing insertion locations (replicon, position, direction) to count " +
+                      "(and ignore all other locations); without this option, all locations are counted")
+    parser.add_option("-o", "--outfile", action="store", type="string", dest="outfile", required=True,
                       help="output file")
     opts, args = parser.parse_args()
 
@@ -64,8 +63,14 @@ def read_files(infiles, ok_locs_file=None):
                 for line in fh:
                     (replicon, pos, strand, readcount) = line.rstrip().split("\t")
                     if ok_locs_file:
-                        if (replicon, pos, strand) not in ok_locations:
-                            # skip the location if it's not a one designated to be counted
+                        # skip the location if it's not one designated to be counted:
+                        # (adjust for possible back-end sequencing indication (lower case strand designation))
+                        fe_pos = pos    # front-end dir should be upper case
+                        if pos == "f":
+                            fe_pos = "R"
+                        elif pos == "r":
+                            fe_pos = "F"
+                        if (replicon, fe_pos, strand) not in ok_locations: 
                             continue
                     totals[(replicon, pos, strand)] = totals.get((replicon, pos, strand), 0) + float(readcount)
                     filereads[(infile, replicon, pos, strand)] = readcount
