@@ -28,11 +28,10 @@ def init_options():
     parser.add_option("-l", "--ok_locs_file", action="store", type="string", dest="ok_locs_file", default=None,
                       help="file (with header) listing insertion locations (replicon, position, direction) to count " +
                       "(and ignore all other locations); without this option, all locations are counted")
-    parser.add_option("-o", "--outfile", action="store", type="string", dest="outfile", required=True,
-                      help="output file")
+    parser.add_option("-o", "--outfile", action="store", type="string", dest="outfile", help="output file")
     opts, args = parser.parse_args()
 
-    if len(args)==0:
+    if len(args)==0 or opts.outfile is None:
         parser.print_help()
         exit(1)
 
@@ -41,18 +40,16 @@ def init_options():
 def get_ok_locs(ok_locs_file):
     ok_locs = list()
     with open(ok_locs_file, "r") as fh:
-        try:
-            header = fh.readline()
-            for line in fh:
-                (replicon, pos, strand) = line.rstrip().split("\t")[:3]
-                ok_locs.append((replicon, pos, strand))
-        except StopIteration:
-            break
+        header = fh.readline()
+        for line in fh:
+            (replicon, pos, strand) = line.rstrip().split("\t")[:3]
+            ok_locs.append((replicon, pos, strand))
     return ok_locs
 
 def read_files(infiles, ok_locs_file=None):
     if ok_locs_file:
         ok_locations = get_ok_locs(ok_locs_file)
+        print "Acceptable locations loaded: " + str(len(ok_locations))
     totals = dict()
     filereads = dict()
     for infile in infiles:
@@ -63,14 +60,14 @@ def read_files(infiles, ok_locs_file=None):
                 for line in fh:
                     (replicon, pos, strand, readcount) = line.rstrip().split("\t")
                     if ok_locs_file:
-                        # skip the location if it's not one designated to be counted:
                         # (adjust for possible back-end sequencing indication (lower case strand designation))
-                        fe_pos = pos    # front-end dir should be upper case
-                        if pos == "f":
-                            fe_pos = "R"
-                        elif pos == "r":
-                            fe_pos = "F"
-                        if (replicon, fe_pos, strand) not in ok_locations: 
+                        fe_strand = strand    # front-end strand should be upper case
+                        if strand == "f":
+                            fe_strand = "R"
+                        elif strand == "r":
+                            fe_strand = "F"
+                        # skip the location if it's not one designated to be counted:
+                        if (replicon, pos, fe_strand) not in ok_locations: 
                             continue
                     totals[(replicon, pos, strand)] = totals.get((replicon, pos, strand), 0) + float(readcount)
                     filereads[(infile, replicon, pos, strand)] = readcount
@@ -107,7 +104,7 @@ def main():
     infiles = args
 
     print "Compiling sets of read counts"
-    (totals, filereads) = read_files(infiles, args.ok_locs_file)
+    (totals, filereads) = read_files(infiles, opts.ok_locs_file)
 
     write_compiled(totals, filereads, infiles, opts.outfile)
 
