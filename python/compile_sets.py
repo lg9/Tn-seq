@@ -38,12 +38,12 @@ def init_options():
     return opts, args
 
 def get_ok_locs(ok_locs_file):
-    ok_locs = list()
+    ok_locs = set()
     with open(ok_locs_file, "r") as fh:
         header = fh.readline()
         for line in fh:
             (replicon, pos, strand) = line.rstrip().split("\t")[:3]
-            ok_locs.append((replicon, pos, strand))
+            ok_locs.add((replicon, pos, strand))
     return ok_locs
 
 def read_files(infiles, ok_locs_file=None):
