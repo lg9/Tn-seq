@@ -20,7 +20,36 @@ SHOW_TOTALS = False
 #------------------------------------------------------------------------------
 # functions
 #------------------------------------------------------------------------------
-def read_files(infiles):
+def init_options():
+    usage = "usage: %prog [options] <input file(s)>"
+    parser = optparse.OptionParser(prog=sys.argv[0],
+                                   usage=usage,
+                                   add_help_option=True)
+    parser.add_option("-l", "--ok_locs_file", action="store", type="string", dest="ok_locs_file", default=None,
+                      help="file (with header) listing insertion locations (replicon, position, direction) to count " +
+                      "(and ignore all other locations); without this option, all locations are counted")
+    parser.add_option("-o", "--outfile", action="store", type="string", dest="outfile", help="output file")
+    opts, args = parser.parse_args()
+
+    if len(args)==0 or opts.outfile is None:
+        parser.print_help()
+        exit(1)
+
+    return opts, args
+
+def get_ok_locs(ok_locs_file):
+    ok_locs = set()
+    with open(ok_locs_file, "r") as fh:
+        header = fh.readline()
+        for line in fh:
+            (replicon, pos, strand) = line.rstrip().split("\t")[:3]
+            ok_locs.add((replicon, pos, strand))
+    return ok_locs
+
+def read_files(infiles, ok_locs_file=None):
+    if ok_locs_file:
+        ok_locations = get_ok_locs(ok_locs_file)
+        print "Acceptable locations loaded: " + str(len(ok_locations))
     totals = dict()
     filereads = dict()
     for infile in infiles:
@@ -30,6 +59,16 @@ def read_files(infiles):
                 header = fh.readline()
                 for line in fh:
                     (replicon, pos, strand, readcount) = line.rstrip().split("\t")
+                    if ok_locs_file:
+                        # (adjust for possible back-end sequencing indication (lower case strand designation))
+                        fe_strand = strand    # front-end strand should be upper case
+                        if strand == "f":
+                            fe_strand = "R"
+                        elif strand == "r":
+                            fe_strand = "F"
+                        # skip the location if it's not one designated to be counted:
+                        if (replicon, pos, fe_strand) not in ok_locations: 
+                            continue
                     totals[(replicon, pos, strand)] = totals.get((replicon, pos, strand), 0) + float(readcount)
                     filereads[(infile, replicon, pos, strand)] = readcount
             except StopIteration:
@@ -61,16 +100,13 @@ def write_compiled(totals, filereads, infiles, outfile):
 #-----------------------------------------------------
 def main():
     # Get command line options
-    if len(sys.argv) < 3:
-        print "Usage: " + sys.argv[0] + " <input file(s)> <output file>"
-        exit(1)
-    infiles = sys.argv[1:-1]
-    outfile = sys.argv[-1]
+    opts, args = init_options()
+    infiles = args
 
     print "Compiling sets of read counts"
-    (totals, filereads) = read_files(infiles)
+    (totals, filereads) = read_files(infiles, opts.ok_locs_file)
 
-    write_compiled(totals, filereads, infiles, outfile)
+    write_compiled(totals, filereads, infiles, opts.outfile)
 
 if __name__ == "__main__":
     main()

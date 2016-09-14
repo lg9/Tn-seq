@@ -29,6 +29,7 @@ def init_options():
                           add_help_option=True)
     parser.add_option("-r", "--reffile", action="store", type="string", dest="reference_fa", help="path to reference genome fasta")
     parser.add_option("-a", "--annofiles", action="store", type="string", dest="annofiles", help="path to reference .ptt annotation file(s) (comma-separated list if using more than one; order must match sequences in reference fasta)")
+    parser.add_option("-l", "--ok_locs_file", action="store", type="string", dest="ok_locs_file", default=None, help="file (with header) listing insertion locations (replicon, position, direction) to count (and ignore all other locations); without this option, all locations are counted")
     parser.add_option("-o", "--outfile_anno", action="store", type="string", dest="outfile_anno", default=common.OUTFILE_ANNO, help="path to final annotated output file (default: " + common.WORKING_DIR + "/" + common.OUTFILE_ANNO + ")")
     parser.add_option("-p", "--outfile_tab", action="store", type="string", dest="outfile_tab", default=common.OUTFILE_TAB, help="path to final counts tabulated by gene (default: " + common.WORKING_DIR + "/" + common.OUTFILE_TAB + ")")
     parser.add_option("-w", "--workingdir", action="store", default="", dest="workdir", help="working directory for input and output files (default: " + common.WORKING_DIR + ")")
@@ -56,10 +57,11 @@ def process(infiles, opts, replicons):
 
     # Compile summary sets
     readscomp = os.path.join(opts.workdir, common.READSCOMP)
-    cmd = ["python", os.path.join(scriptpath, "compile_sets.py")]
+    cmd = ["python", os.path.join(scriptpath, "compile_sets.py"), "--outfile", readscomp]
+    if opts.ok_locs_file:
+        cmd.extend(["--ok_locs_file", opts.ok_locs_file])
     cmd.extend(split_files_all)
     cmd.extend(split_files_q0)
-    cmd.append(readscomp)
     common.run_cmd(cmd)
 
     # Annotate positions
