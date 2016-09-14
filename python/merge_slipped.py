@@ -62,7 +62,7 @@ def merge_slips(poscounts):
     prevstrand = None
     prevreads = 0
     prevq0 = 0
-    for (replicon, pos, strand) in sorted(poscounts, key=lambda x: int(x[1])):
+    for (replicon, pos, strand) in sorted(poscounts, key=lambda x: (x[0], int(x[1]), int(x[2]))):
         (reads, q0reads) = poscounts[(replicon, pos, strand)]
         if prevrepl is not None:
             (prevreads, prevq0) = poscounts[(prevrepl, prevpos, prevstrand)]
@@ -90,7 +90,7 @@ def merge_slips(poscounts):
 def write_merged(mgcounts, header, outfile):
     with open(outfile, "w") as fh:
         fh.write(header)
-        for (replicon, pos, strand) in sorted(mgcounts, key=lambda x: int(x[1])):
+        for (replicon, pos, strand) in sorted(mgcounts, key=lambda x: (x[0], int(x[1]))):
             (reads, q0reads) = mgcounts[(replicon, pos, strand)]
             fh.write('\t'.join( (replicon, str(pos), strand, str(reads), str(q0reads)) ) + '\n')
 
